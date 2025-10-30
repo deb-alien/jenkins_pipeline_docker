@@ -1,0 +1,33 @@
+pipeline {
+    agent {
+        docker {
+            image 'node:lts-alpine'
+        }
+    }
+
+    environment {
+        JEST_JUNIT_OUTPUT = 'jest-junit.xml'
+        REPORTS_DIR = 'coverage'
+    }
+
+    stages {
+        stage('Audit Tools') {
+            steps {
+                auditTools()
+            }
+        }
+
+
+    }
+}
+
+void auditTools() {
+    sh '''
+        echo "Auditing tools..."
+        node --version
+        npm --version
+    '''
+
+    sh'printenv'
+    sh'ls -l $WORKSPACE'
+}
