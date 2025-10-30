@@ -19,7 +19,6 @@ pipeline {
                     echo "Auditing tools..."
                     node --version
                     npm --version
-                    docker --version
                 '''
 
                 sh 'printenv'
