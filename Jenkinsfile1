@@ -13,21 +13,71 @@ pipeline {
     stages {
         stage('Audit Tools') {
             steps {
-                auditTools()
+                sh '''
+                    echo "Auditing tools..."
+                    node --version
+                    npm --version
+                '''
+
+                sh 'printenv'
+                sh 'ls -l $WORKSPACE'
+
             }
         }
 
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // Run Jest with coverage and JUnit output for reporting
+                sh '''
+                    npm run test -- \
+                    --coverage \
+                    --reporters=default \
+                    --reporters=jest-junit
+                '''
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                junit '${JEST_JUNIT_OUTPUT}'
+
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: "${REPORTS_DIR}/lcov-report",
+                    reportFiles: 'index.html',
+                    reportName: 'Jest Coverage Report'
+                ])
+            }
+        }
 
     }
-}
 
-void auditTools() {
-    sh '''
-        echo "Auditing tools..."
-        node --version
-        npm --version
-    '''
+    post {
+        always {
+            echo 'Build completed. Cleaning up workspace...'
+            cleanWs()
+        }
 
-    sh'printenv'
-    sh'ls -l $WORKSPACE'
+        success {
+            echo 'Build succeeded!'
+        }
+
+        failure {
+            echo 'Build failed!'
+        }
+    }
 }
