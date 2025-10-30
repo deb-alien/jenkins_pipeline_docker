@@ -8,6 +8,7 @@ pipeline {
     environment {
         JEST_JUNIT_OUTPUT = 'jest-junit.xml'
         REPORTS_DIR = 'coverage'
+        WORKDIR = './project'
     }
 
     stages {
@@ -27,40 +28,50 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm ci'
+                dir("${WORKDIR}") {
+                    sh 'npm ci'
+                }
             }
         }
 
         stage('Build') {
             steps {
-                sh 'npm run build'
+                dir("${WORKDIR}") {
+                    sh 'npm run build'
+                }
             }
         }
 
         stage('Test') {
             steps {
                 // Run Jest with coverage and JUnit output for reporting
-                sh '''
-                    npm run test -- \
-                    --coverage \
-                    --reporters=default \
-                    --reporters=jest-junit
-                '''
+                dir("${WORKDIR}") {
+                    sh '''
+                        npm run test -- \
+                        --coverage \
+                        --reporters=default \
+                        --reporters=jest-junit
+                    '''
+                }
+
             }
         }
 
         stage('Publish Test Results') {
             steps {
-                junit '${JEST_JUNIT_OUTPUT}'
+                dir("${WORKDIR}") {
+                    junit '${JEST_JUNIT_OUTPUT}'
 
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: "${REPORTS_DIR}/lcov-report",
-                    reportFiles: 'index.html',
-                    reportName: 'Jest Coverage Report'
-                ])
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: "${REPORTS_DIR}/lcov-report",
+                        reportFiles: 'index.html',
+                        reportName: 'Jest Coverage Report'
+                    ])
+                }
+
             }
         }
 
