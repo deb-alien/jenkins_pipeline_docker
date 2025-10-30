@@ -29,7 +29,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir("${WORKDIR}") {
-                    sh 'npm ci'
+                    sh 'npm install'
                 }
             }
         }
